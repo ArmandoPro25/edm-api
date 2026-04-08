@@ -74,7 +74,7 @@ export class TaskController {
   ): Promise<boolean> {
     try {
       await this.tasksvc.deleteTask(id);
-    } catch (error) {
+    } catch {
       throw new HttpException(
         `Error al eliminar la tarea con id: ${id}`,
         HttpStatus.INTERNAL_SERVER_ERROR,

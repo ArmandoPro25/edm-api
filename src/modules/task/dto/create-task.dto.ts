@@ -13,29 +13,29 @@ export class CreateTaskDto {
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(100)
-  name: string;
+  name!: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(5)
   @MaxLength(250)
-  description: string;
+  description!: string;
 
   @IsNotEmpty()
   @IsInt()
-  priority: number;
+  priority!: number;
 
   @IsNotEmpty()
   @IsBoolean()
-  completed: boolean;
+  completed!: boolean;
 
   @IsNotEmpty()
   @IsString()
-  dateVencimiento: string;
+  dateVencimiento!: string;
 
   @IsNotEmpty()
   @IsInt()
-  user_id: number;
+  user_id!: number;
 }
 
 export class UpdateTaskDto {

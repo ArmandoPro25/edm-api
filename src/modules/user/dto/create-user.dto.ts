@@ -5,27 +5,27 @@ export class CreateUserDto {
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(200)
-  name: string;
+  name!: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
   @MaxLength(300)
-  lastName: string;
+  lastName!: string;
 
   @IsNotEmpty()
   @IsString()
   @MinLength(3)
   @MaxLength(100)
-  username: string;
+  username!: string;
 
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty()
-  password: string;
+  password!: string;
 }
 
 export class UpdateUserDto {
@@ -49,7 +49,7 @@ export class UpdateUserDto {
 
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email?: string;
 
   @IsOptional()
   @IsString()
