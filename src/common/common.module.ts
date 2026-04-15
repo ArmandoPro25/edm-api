@@ -8,7 +8,7 @@ import { UtilService } from './services/util.service';
   imports: [
     JwtModule.register({
       secret: 'tu-clave-secreta-super-segura',
-      signOptions: { expiresIn: '60s' },
+      signOptions: { expiresIn: '1d' },
     }),
   ],
   providers: [PrismaService, UtilService],

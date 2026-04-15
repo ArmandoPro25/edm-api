@@ -11,8 +11,9 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async register(name: string, lastName: string, username: string, email: string, password: string) {
+  async register(name: string, lastName: string, username: string, email: string, password: string, role: string) {
     const hashedPassword = await this.utilService.hashPassword(password);
+    const finalRole = role || 'USER';
 
     const user = await this.prisma.user.create({
       data: {
@@ -20,6 +21,7 @@ export class AuthService {
         lastName,
         username,
         email,
+        role: finalRole,
         password: hashedPassword,
       },
     });
@@ -29,6 +31,7 @@ export class AuthService {
       username: user.username,
       name: user.name,
       lastName: user.lastName,
+      role: user.role,
     };
 
     const accessToken = this.jwtService.sign(payload, { expiresIn: '1d' });
@@ -68,9 +71,10 @@ export class AuthService {
       username: user.username,
       name: user.name,
       lastName: user.lastName,
+      role: user.role,
     };
 
-    const accessToken = this.jwtService.sign(payload, { expiresIn: '60s' });
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '1d' });
     const refreshToken = this.jwtService.sign(payload, { expiresIn: '7d' });
 
     await this.prisma.user.update({

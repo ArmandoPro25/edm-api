@@ -33,7 +33,7 @@ export class CreateTaskDto {
   @IsString()
   dateVencimiento!: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsInt()
   user_id!: number;
 }
@@ -59,7 +59,7 @@ export class UpdateTaskDto {
   @IsBoolean()
   completed?: boolean;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   dateVencimiento?: string;
 }

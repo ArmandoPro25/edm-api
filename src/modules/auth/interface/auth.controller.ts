@@ -20,8 +20,9 @@ export class AuthController {
   @Post('/register')
   @HttpCode(HttpStatus.CREATED)
   public async register(@Body() createUserDto: CreateUserDto) {
-    const { name, lastName, username, email, password } = createUserDto;
-    return await this.authSvc.register(name, lastName, username, email, password);
+    const { name, lastName, username, email, password, role } = createUserDto;
+    const finalRole = role || 'USER';
+    return await this.authSvc.register(name, lastName, username, email, password, finalRole);
   }
 
   @Post('/login')

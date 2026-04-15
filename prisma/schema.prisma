@@ -13,6 +13,7 @@ model User {
   email        String   @unique @db.VarChar(100)
   username     String   @unique @db.VarChar(100)
   password     String   @db.LongText
+  role         String   @default("USER") @db.VarChar(20)
   refreshToken String?  @db.LongText
   createdAt    DateTime @default(now())
   task         Task[]

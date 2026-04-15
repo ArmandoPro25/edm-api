@@ -29,6 +29,26 @@ CREATE TABLE task (
         FOREIGN KEY (user_id) REFERENCES user(id)
 );
 
+CREATE TABLE rol (
+    id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (id)
+)
+
+CREATE TABLE user_rol (
+    user_id INT NOT NULL,
+    rol_id INT NOT NULL,
+    PRIMARY KEY (user_id, rol_id),
+    INDEX (user_id),
+    INDEX (rol_id),
+    CONSTRAINT fk_user_rol_user
+        FOREIGN KEY (user_id) REFERENCES user(id),
+    CONSTRAINT fk_user_rol_rol
+        FOREIGN KEY (rol_id) REFERENCES rol(id)
+);
+
+INSERT INTO rol (name) VALUES ('USER'), ('ADMIN');
+
 INSERT INTO user (name, lastName, username, password, email)
 VALUES ('Armando', 'Ruano', 'Armando2498q', 'linux', 'armando.ruano.dev@gmail.com');
 

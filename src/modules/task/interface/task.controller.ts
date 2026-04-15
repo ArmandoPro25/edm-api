@@ -28,6 +28,12 @@ export class TaskController {
     return await this.tasksvc.getTasksByUserId(userId);
   }
 
+  @Get('my-tasks/completed')
+  async getMyCompletedTasks(@Req() req: any): Promise<Task[]> {
+    const userId = req.user.sub;
+    return await this.tasksvc.getCompletedTasksByUserId(userId);
+  }
+
   @Get('')
   async getAllTasks(): Promise<Task[]> {
     return await this.tasksvc.getAllTasks();
@@ -49,7 +55,11 @@ export class TaskController {
   }
 
   @Post('')
-  public async insertTask(@Body() task: CreateTaskDto): Promise<Task> {
+  public async insertTask(@Body() task: CreateTaskDto, @Req() req: any): Promise<Task> {
+    // Obtener el userId del token
+    const userId = req.user.sub;
+    task.user_id = userId;
+  
     const result = await this.tasksvc.InsertTask(task);
     if (result == undefined || result == null) {
       throw new HttpException(

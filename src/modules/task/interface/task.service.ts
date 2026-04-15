@@ -75,4 +75,24 @@ export class TaskService {
     });
     return tasks;
   }
+
+  public async getCompletedTasksByUserId(userId: number): Promise<Task[]> {
+    const tasks = await this.prisma.task.findMany({
+      where: {
+        user_id: userId,
+        completed: true,
+      },
+      orderBy: [{ name: 'asc' }],
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        priority: true,
+        completed: true,
+        dateVencimiento: true,
+        user_id: true,
+      },
+    });
+    return tasks;
+  }
 }
