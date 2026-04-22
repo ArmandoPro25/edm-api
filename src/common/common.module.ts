@@ -3,6 +3,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { PrismaService } from './services/prisma.service';
 import { UtilService } from './services/util.service';
 import { RolesGuard } from './guards/roles.guards';
+import { AuditService } from './services/audit.service';
 
 @Global()
 @Module({
@@ -12,7 +13,7 @@ import { RolesGuard } from './guards/roles.guards';
       signOptions: { expiresIn: '1d' },
     }),
   ],
-  providers: [PrismaService, UtilService, RolesGuard],
-  exports: [PrismaService, UtilService, JwtModule, RolesGuard],
+  providers: [PrismaService, UtilService, RolesGuard, AuditService],
+  exports: [PrismaService, UtilService, JwtModule, RolesGuard, AuditService],
 })
 export class CommonModule {}

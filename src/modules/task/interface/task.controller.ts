@@ -10,17 +10,19 @@ import {
   Post,
   Put,
   Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { TaskService } from './task.service';
 import { CreateTaskDto, UpdateTaskDto } from '../dto/create-task.dto';
 import { Task } from '../entities/task.entity';
 import { AuthGuard } from 'src/common/guards/auth.guards';
+import { AuditService } from 'src/common/services/audit.service';
 
 @Controller('/api/task')
 @UseGuards(AuthGuard)
 export class TaskController {
-  constructor(private tasksvc: TaskService) {}
+  constructor(private tasksvc: TaskService, private auditService: AuditService) {}
 
   @Get('my-tasks')
   async getMyTasks(@Req() req: any): Promise<Task[]> {
@@ -55,17 +57,29 @@ export class TaskController {
   }
 
   @Post('')
-  public async insertTask(@Body() task: CreateTaskDto, @Req() req: any): Promise<Task> {
+  public async insertTask(
+    @Body() task: CreateTaskDto,
+    @Req() req: any,
+  ): Promise<Task> {
     const userId = req.user.sub;
     task.user_id = userId;
-  
+
     const result = await this.tasksvc.InsertTask(task);
-    if (result == undefined || result == null) {
+    if (!result) {
       throw new HttpException(
         `Error al insertar la tarea`,
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+
+    await this.auditService.log(
+      'TASK_CREATED',
+      userId,
+      `Tarea ID ${result.id} creada: "${result.name}"`,
+      req.ip,
+      'INFO',
+    );
+
     return result;
   }
 
@@ -73,22 +87,68 @@ export class TaskController {
   public async updateTask(
     @Param('id', ParseIntPipe) id: number,
     @Body() taskUpdate: UpdateTaskDto,
+    @Req() req: any,
   ): Promise<Task> {
-    return this.tasksvc.updateTask(id, taskUpdate);
+    const task = await this.tasksvc.getTaskById(id);
+    if (!task) {
+      throw new HttpException('Tarea no encontrada', HttpStatus.NOT_FOUND);
+    }
+
+    if (req.user.role !== 'ADMIN' && task.user_id !== req.user.sub) {
+      await this.auditService.log(
+        'TASK_UPDATE_UNAUTHORIZED',
+        req.user.sub,
+        `Intento no autorizado de modificar tarea ID ${id}`,
+        req.ip,
+        'WARNING',
+      );
+      throw new UnauthorizedException('No puedes modificar esta tarea');
+    }
+
+    const updatedTask = await this.tasksvc.updateTask(id, taskUpdate);
+
+    await this.auditService.log(
+      'TASK_UPDATED',
+      req.user.sub,
+      `Tarea ID ${id} actualizada. Cambios: ${JSON.stringify(taskUpdate)}`,
+      req.ip,
+      'INFO',
+    );
+
+    return updatedTask;
   }
 
   @Delete(':id')
   public async deleteTask(
     @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
   ): Promise<boolean> {
-    try {
-      await this.tasksvc.deleteTask(id);
-    } catch {
-      throw new HttpException(
-        `Error al eliminar la tarea con id: ${id}`,
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
+    const task = await this.tasksvc.getTaskById(id);
+    if (!task) {
+      throw new HttpException('Tarea no encontrada', HttpStatus.NOT_FOUND);
     }
+
+    if (req.user.role !== 'ADMIN' && task.user_id !== req.user.sub) {
+      await this.auditService.log(
+        'TASK_DELETE_UNAUTHORIZED',
+        req.user.sub,
+        `Intento no autorizado de eliminar tarea ID ${id}`,
+        req.ip,
+        'WARNING',
+      );
+      throw new UnauthorizedException('No puedes eliminar esta tarea');
+    }
+
+    await this.tasksvc.deleteTask(id);
+
+    await this.auditService.log(
+      'TASK_DELETED',
+      req.user.sub,
+      `Tarea ID ${id} eliminada: "${task.name}"`,
+      req.ip,
+      'INFO',
+    );
+
     return true;
   }
 }

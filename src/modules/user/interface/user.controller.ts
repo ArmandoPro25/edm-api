@@ -19,6 +19,7 @@ import { User } from '../entities/user.entity';
 import { UtilService } from 'src/common/services/util.service';
 import { AuthGuard } from 'src/common/guards/auth.guards';
 import { Roles } from 'src/common/decorators/roles.decorator';
+import { AuditService } from 'src/common/services/audit.service';
 
 @Controller('/api/user')
 @UseGuards(AuthGuard)
@@ -26,6 +27,7 @@ export class UserController {
   constructor(
     private usersvc: UserService,
     private utilSvc: UtilService,
+    private auditService: AuditService,
   ) {}
 
   @Get('')
@@ -50,7 +52,7 @@ export class UserController {
   }
 
   @Post('')
-  public async insertUser(@Body() user: CreateUserDto): Promise<User> {
+  public async insertUser(@Body() user: CreateUserDto, @Req() req: any): Promise<User> {
     const encryptedPassword = await this.utilSvc.hashPassword(user.password);
     user.password = encryptedPassword;
     const result = await this.usersvc.InsertUser(user);
@@ -60,6 +62,15 @@ export class UserController {
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
+
+    await this.auditService.log(
+      'USER_CREATED',
+      req.user?.sub,
+      `Usuario creado: ${result.username} (ID ${result.id}) con rol ${result.role}`,
+      req.ip,
+      'INFO',
+    );
+
     return result;
   }
 
@@ -70,20 +81,69 @@ export class UserController {
     @Req() req
   ): Promise<User> {
     if (req.user.role !== 'ADMIN' && req.user.sub !== id) {
+      await this.auditService.log(
+        'USER_UPDATE_UNAUTHORIZED',
+        req.user.sub,
+        `Intento no autorizado de editar usuario ID ${id}`,
+        req.ip,
+        'WARNING',
+      );
       throw new UnauthorizedException('No puedes editar este perfil');
     }
+
+    // Obtener usuario antes de actualizar para detectar cambio de rol
+    const oldUser = await this.usersvc.getUserById(id);
+    const oldRole = oldUser?.role;
+
     if (userUpdate.password) {
       userUpdate.password = await this.utilSvc.hashPassword(userUpdate.password);
     }
-    return this.usersvc.updateUser(id, userUpdate);
+
+    const updatedUser = await this.usersvc.updateUser(id, userUpdate);
+
+    const changes: string[] = [];
+    if (oldRole && userUpdate.role && oldRole !== userUpdate.role) {
+      changes.push(`rol: ${oldRole} → ${userUpdate.role}`);
+    }
+    await this.auditService.log(
+      'USER_UPDATED',
+      req.user.sub,
+      `Usuario ID ${id} actualizado. Cambios: ${changes.length ? changes.join(', ') : 'datos generales'}`,
+      req.ip,
+      'INFO',
+    );
+
+    if (userUpdate.role && oldRole !== userUpdate.role) {
+      await this.auditService.log(
+        'ROLE_CHANGED',
+        req.user.sub,
+        `Rol de usuario ID ${id} cambiado de ${oldRole} a ${userUpdate.role}`,
+        req.ip,
+        'WARNING',
+      );
+    }
+
+    return updatedUser;
   }
 
   @Delete(':id')
   @Roles('ADMIN')
   public async deleteUser(
     @Param('id', ParseIntPipe) id: number,
+    @Req() req: any,
   ): Promise<boolean> {
+    const userToDelete = await this.usersvc.getUserById(id);
+    
     await this.usersvc.deleteUser(id);
+
+    await this.auditService.log(
+      'USER_DELETED',
+      req.user.sub,
+      `Usuario ID ${id} eliminado (username: ${userToDelete?.username})`,
+      req.ip,
+      'WARNING',
+    );
+
     return true;
   }
 }

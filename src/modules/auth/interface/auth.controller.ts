@@ -28,9 +28,10 @@ export class AuthController {
 
   @Post('/login')
   @HttpCode(HttpStatus.OK)
-  async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto, @Request() req: any) {
     const { username, password } = loginDto;
-    return await this.authSvc.login(username, password);
+    const ip = req.ip || req.connection?.remoteAddress;
+    return await this.authSvc.login(username, password, ip);
   }
 
   @Post('/refresh')
