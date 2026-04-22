@@ -80,4 +80,20 @@ export class UserService {
     const userDeleted = await this.prisma.user.delete({ where: { id } });
     return userDeleted as User;
   }
+
+  public async isUsernameTaken(username: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      select: { id: true }
+    });
+    return !!user;
+  }
+
+  public async isEmailTaken(email: string): Promise<boolean> {
+    const user = await this.prisma.user.findUnique({
+      where: { email },
+      select: { id: true }
+    });
+    return !!user;
+  }
 }

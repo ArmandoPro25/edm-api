@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Query,
   Req,
   UnauthorizedException,
   UseGuards,
@@ -22,7 +23,6 @@ import { Roles } from 'src/common/decorators/roles.decorator';
 import { AuditService } from 'src/common/services/audit.service';
 
 @Controller('/api/user')
-@UseGuards(AuthGuard)
 export class UserController {
   constructor(
     private usersvc: UserService,
@@ -30,13 +30,33 @@ export class UserController {
     private auditService: AuditService,
   ) {}
 
+  @Get('check-username')
+  async checkUsername(@Query('username') username: string) {
+    if (!username) {
+      throw new HttpException('Username es requerido', HttpStatus.BAD_REQUEST);
+    } 
+    const taken = await this.usersvc.isUsernameTaken(username);
+    return { available: !taken };
+  }
+
+  @Get('check-email')
+  async checkEmail(@Query('email') email: string) {
+    if (!email) {
+      throw new HttpException('Email es requerido', HttpStatus.BAD_REQUEST);
+    }
+    const taken = await this.usersvc.isEmailTaken(email);
+    return { available: !taken };
+  }
+
   @Get('')
+  @UseGuards(AuthGuard)
   @Roles('ADMIN')
   async getAllUsers(): Promise<User[]> {
     return await this.usersvc.getAllUsers();
   }
 
   @Get(':id')
+  @UseGuards(AuthGuard)
   public async listUserById(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<User> {
@@ -75,6 +95,7 @@ export class UserController {
   }
 
   @Put(':id')
+  @UseGuards(AuthGuard)
   public async updateUser(
     @Param('id', ParseIntPipe) id: number,
     @Body() userUpdate: UpdateUserDto,
@@ -128,6 +149,7 @@ export class UserController {
 
   @Delete(':id')
   @Roles('ADMIN')
+  @UseGuards(AuthGuard)
   public async deleteUser(
     @Param('id', ParseIntPipe) id: number,
     @Req() req: any,
