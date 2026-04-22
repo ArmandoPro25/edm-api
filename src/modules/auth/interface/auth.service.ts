@@ -87,4 +87,44 @@ export class AuthService {
       refreshToken,
     };
   }
+
+  async refreshTokens(refreshToken: string) {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+      const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
+
+      if (!user || user.refreshToken !== refreshToken) {
+        throw new UnauthorizedException('Refresh token inválido');
+      }
+
+      const newPayload = {
+        sub: user.id,
+        username: user.username,
+        name: user.name,
+        lastName: user.lastName,
+        role: user.role,
+      };
+
+      const newAccessToken = this.jwtService.sign(newPayload, { expiresIn: '1d' });
+      const newRefreshToken = this.jwtService.sign(newPayload, { expiresIn: '7d' });
+
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { refreshToken: newRefreshToken },
+      });
+
+      return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+    } catch {
+      throw new UnauthorizedException('Refresh token inválido o expirado');
+    }
+  }
+
+  async logout(userId: number) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { refreshToken: null },
+    });
+    return { message: 'Logout exitoso' };
+  }
+
 }

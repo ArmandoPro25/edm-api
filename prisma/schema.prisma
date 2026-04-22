@@ -29,3 +29,13 @@ model Task {
   user_id     Int
   user        User    @relation(fields: [user_id], references: [id])
 }
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  action    String   @db.VarChar(100)
+  details   String?  @db.Text
+  ip        String?  @db.VarChar(45)
+  severity  String   @default("INFO") @db.VarChar(20)
+  createdAt DateTime @default(now())
+}

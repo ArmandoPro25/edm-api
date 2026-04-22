@@ -55,7 +55,7 @@ export class UpdateTaskDto {
   @IsInt()
   priority?: number;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsBoolean()
   completed?: boolean;
 

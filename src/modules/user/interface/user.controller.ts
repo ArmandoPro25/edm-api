@@ -9,6 +9,8 @@ import {
   ParseIntPipe,
   Post,
   Put,
+  Req,
+  UnauthorizedException,
   UseGuards,
 } from '@nestjs/common';
 import { UserService } from './user.service';
@@ -16,6 +18,7 @@ import { CreateUserDto, UpdateUserDto } from '../dto/create-user.dto';
 import { User } from '../entities/user.entity';
 import { UtilService } from 'src/common/services/util.service';
 import { AuthGuard } from 'src/common/guards/auth.guards';
+import { Roles } from 'src/common/decorators/roles.decorator';
 
 @Controller('/api/user')
 @UseGuards(AuthGuard)
@@ -26,6 +29,7 @@ export class UserController {
   ) {}
 
   @Get('')
+  @Roles('ADMIN')
   async getAllUsers(): Promise<User[]> {
     return await this.usersvc.getAllUsers();
   }
@@ -63,7 +67,11 @@ export class UserController {
   public async updateUser(
     @Param('id', ParseIntPipe) id: number,
     @Body() userUpdate: UpdateUserDto,
+    @Req() req
   ): Promise<User> {
+    if (req.user.role !== 'ADMIN' && req.user.sub !== id) {
+      throw new UnauthorizedException('No puedes editar este perfil');
+    }
     if (userUpdate.password) {
       userUpdate.password = await this.utilSvc.hashPassword(userUpdate.password);
     }
@@ -71,6 +79,7 @@ export class UserController {
   }
 
   @Delete(':id')
+  @Roles('ADMIN')
   public async deleteUser(
     @Param('id', ParseIntPipe) id: number,
   ): Promise<boolean> {

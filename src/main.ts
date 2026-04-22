@@ -2,10 +2,15 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { SanitizePipe } from './common/pipes/sanitize.pipe';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  app.useGlobalPipes(new SanitizePipe());
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalFilters(new AllExceptionsFilter());
   app.enableCors({
     origin: 'http://localhost:4200',
     credentials: true,
@@ -38,19 +43,9 @@ bootstrap();
 //!npm i mysql2
 //!npm i @types/mysql2 -D
 
-//? POSTGRESQL
-//!npm i pg
-//!npm i @types/pg -D
-
 //? Install SWAGGER
 //! npm install @nestjs/swagger
-
-//! git commit -a "fix: CRUD funcional con base de datos y configuracion de SWAGGER"
-
-//! git commit -a "fix: Uso de prisma y correccion de CRUD (Task)"
 
 //? BYCRIPT
 //! npm i bcrypt
 //! npm i @types/bcrypt -D
-
-//! git commit -a "fix: CRUD de usuarios y creacion de rutas para la autenticacion"

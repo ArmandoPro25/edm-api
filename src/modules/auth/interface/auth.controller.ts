@@ -12,6 +12,7 @@ import { AuthService } from './auth.service';
 import { LoginDto } from '../dto/logindto';
 import { CreateUserDto } from 'src/modules/user/dto/create-user.dto';
 import { AuthGuard } from 'src/common/guards/auth.guards';
+import { RefreshTokenDto } from '../entities/refresh-token.entity';
 
 @Controller('api/auth')
 export class AuthController {
@@ -19,7 +20,7 @@ export class AuthController {
 
   @Post('/register')
   @HttpCode(HttpStatus.CREATED)
-  public async register(@Body() createUserDto: CreateUserDto) {
+  async register(@Body() createUserDto: CreateUserDto) {
     const { name, lastName, username, email, password, role } = createUserDto;
     const finalRole = role || 'USER';
     return await this.authSvc.register(name, lastName, username, email, password, finalRole);
@@ -27,20 +28,26 @@ export class AuthController {
 
   @Post('/login')
   @HttpCode(HttpStatus.OK)
-  public async login(@Body() loginDto: LoginDto) {
+  async login(@Body() loginDto: LoginDto) {
     const { username, password } = loginDto;
     return await this.authSvc.login(username, password);
   }
 
-  @Get('/me')
-  @UseGuards(AuthGuard)
-  public getProfile(@Request() req: any) {
-    return req.user; // el payload que guardó el guard
+  @Post('/refresh')
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto) {
+    return await this.authSvc.refreshTokens(refreshTokenDto.refreshToken);
   }
 
-  @Post('/refresh')
-  public refreshToken() {}
-
   @Post('/logout')
-  public logout() {}
+  @UseGuards(AuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async logout(@Request() req: any) {
+    return await this.authSvc.logout(req.user.sub);
+  }
+
+  @Get('/me')
+  @UseGuards(AuthGuard)
+  getProfile(@Request() req: any) {
+    return req.user;
+  }
 }

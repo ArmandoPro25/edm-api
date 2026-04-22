@@ -56,7 +56,6 @@ export class TaskController {
 
   @Post('')
   public async insertTask(@Body() task: CreateTaskDto, @Req() req: any): Promise<Task> {
-    // Obtener el userId del token
     const userId = req.user.sub;
     task.user_id = userId;
   
